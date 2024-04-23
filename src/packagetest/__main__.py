@@ -1,15 +1,13 @@
 # __main__.py
-print(f"__main__.py: __name__={repr(__name__)}")
 
-import collections
+import logging
+FORMAT = '%(levelname)s:%(name)11s:%(message)s'
+logging.basicConfig(format=FORMAT, level='INFO')
+logger = logging.getLogger(__name__)
+logger.info(f" \u2191 __main__.py")
+
 import os
 import sys
-
-# Update sys.path and remove duplicate entries.
-sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
-unique_path = list(collections.OrderedDict.fromkeys(sys.path))
-# print(repr(sys.path), repr(unique_path), sep='\n')
-sys.path = unique_path
 
 from __init__ import main
 
@@ -22,7 +20,7 @@ is_idle, is_pycharm, is_jupyter = (
 )
 if any((is_idle, is_pycharm, is_jupyter,)):
     tests = [
-        [ 'packagetest.py', '-?', ],
+        [ 'packagetest', '-?', ],
     ]
     for test in tests:
         main(test)

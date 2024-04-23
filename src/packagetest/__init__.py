@@ -1,22 +1,33 @@
 # __init__.py
-print(f"__init__.py: __name__='{__name__}'")
+
+import logging
+FORMAT = '%(levelname)s:%(name)11s:%(message)s'
+logging.basicConfig(format=FORMAT, level='INFO')
+logger = logging.getLogger(__name__)
+logger.info(f" \u2191 __init__.py")
 
 import collections
 import os
+import shlex
 import sys
 
 # Update sys.path and remove duplicate entries.
 sys.path.insert(1, os.path.dirname(os.path.realpath(__file__)))
 unique_path = list(collections.OrderedDict.fromkeys(sys.path))
-# print(repr(sys.path), repr(unique_path), sep='\n')
+logger.debug(f"sys.path:\n{repr(sys.path)}\n{repr(unique_path)}")
 sys.path = unique_path
 
-import shlex
 import bar
+import baz
+
+__version__ = '0.0.1'
+
 
 def main(argv):
     """Echo argv."""
-    print(f"__init__.main(argv): {repr(shlex.join(argv))}")
+    logger.info(f"   main({repr(shlex.join(argv))})")
+    logger.info(f" \u2192 bar.bar({repr('MAIN')})")
+    bar.bar('MAIN')
 
 if __name__ == '__main__':
     # Check whether imported in an IDE.
