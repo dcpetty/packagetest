@@ -4,7 +4,7 @@ import logging
 FORMAT = '%(levelname)s:%(name)11s:%(message)s'
 logging.basicConfig(format=FORMAT, level='INFO')
 logger = logging.getLogger(__name__)
-logger.info(f" \u2191 __main__.py")
+logger.info(f" \u2191 __main__.py (__package__={repr(__package__)})")
 
 import os
 import sys

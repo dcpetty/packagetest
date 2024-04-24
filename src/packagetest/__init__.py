@@ -4,7 +4,7 @@ import logging
 FORMAT = '%(levelname)s:%(name)11s:%(message)s'
 logging.basicConfig(format=FORMAT, level='INFO')
 logger = logging.getLogger(__name__)
-logger.info(f" \u2191 __init__.py")
+logger.info(f" \u2191 __init__.py (__package__={repr(__package__)})")
 
 import collections
 import os
@@ -28,6 +28,7 @@ def main(argv):
     logger.info(f"   main({repr(shlex.join(argv))})")
     logger.info(f" \u2192 bar.bar({repr('MAIN')})")
     bar.bar('MAIN')
+
 
 if __name__ == '__main__':
     # Check whether imported in an IDE.
