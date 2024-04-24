@@ -188,6 +188,11 @@ INFO:            __main__:   d.d='d'
 <strong>dcp:packagetest % </strong>
 </pre>
 
+## TODO
+
+- Finish documentation on how `src/packagetest` works as a runnable and `import`able package / module
+- Finish documentation on how `src/alternative` works as a runnable and `import`able package / module
+
 <hr>
 
 [&#128279; permalink](https://dcpetty.github.io/packagetest) and [&#128297; repository](https://github.com/dcpetty/packagetest) for this page.
