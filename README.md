@@ -8,7 +8,7 @@ This `packagetest` example repository is a means to explore these three possibil
 1. Importing `packagetest` from the command line through `__main__.py` and running the `main` function;
 1. Importing `packagetest` with the `-m` option from the command line through `__init__.py` and running the `main` function.
 
-It has been confusing to make all this work, given the module loading order of `__init__.py` and `__main__.py`, `import`ing using `from` or not, and whether it is even *desirable* to have a module that is both runable and loadable. I was helped by innumerable [StackOverflow](https://stackoverflow.com/) posts, [Python documentation](https://packaging.python.org/), and ... Here are a few that were invaluable:
+It has been confusing to make all this work, given the module loading order of `__init__.py` and `__main__.py`, `import`ing using `from` or not, and whether it is even *desirable* to have a module that is both runable and loadable. I was helped by innumerable [StackOverflow](https://stackoverflow.com/) posts, [Python documentation](https://packaging.python.org/), and other [Google](https://google.com/) searches. Here are a few that were invaluable:
 
 | Link | Description |
 | --- | --- | 
@@ -126,6 +126,41 @@ INFO:        baz:   __init__.__version__='0.0.1'
 
 Process finished with exit code 0
 </pre>
+
+## `alternative`
+
+I was helped by innumerable [StackOverflow](https://stackoverflow.com/) posts, [Python documentation](https://packaging.python.org/), and other [Google](https://google.com/) searches. Here are a few that were invaluable:
+
+| Link | Decription |
+| --- | --- |
+| https://realpython.com/python-namespace-package/ | RealPython namespace packages. |
+
+The example repository structure and directory / module layout updated with `alternative` is as follows:
+
+```text
+.
+└── packagetest/
+    ├── src/
+    │   ├── alternative/
+    │   │   ├── _main__.py
+    │   │   ├── package/
+    │   │   │   ├── a.py
+    │   │   │   ├── b.py
+    │   │   │   └── c.py
+    │   │   └── d.py
+    │   ├── packagetest/
+    │   │   ├── __init__.py
+    │   │   ├── _main__.py
+    │   │   ├── bar.py
+    │   │   └── baz.py
+    │   ├── foo.py
+    │   └── qux.py
+    ├── .gitignore
+    ├── LICENSE
+    ├── README.md
+    ├── test1.sh
+    └── test2.sh
+```
 
 ## Sample output `test2.sh`
 
