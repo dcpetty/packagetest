@@ -148,12 +148,12 @@ The example repository structure and directory / module layout updated with `alt
     │   │   │   ├── b.py
     │   │   │   └── c.py
     │   │   └── d.py
+    │   ├── foo.py
     │   ├── packagetest/
     │   │   ├── __init__.py
     │   │   ├── _main__.py
     │   │   ├── bar.py
     │   │   └── baz.py
-    │   ├── foo.py
     │   └── qux.py
     ├── .gitignore
     ├── LICENSE
