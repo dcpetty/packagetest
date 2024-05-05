@@ -6,7 +6,7 @@ _logging.basicConfig(format=FORMAT, level='INFO')
 _logger = _logging.getLogger(__name__)
 _logger.info(f" \u2191 run.py (__package__={repr(__package__)})")
 
-from test.__main__ import *
+from tests.__main__ import *
 
 if __name__ == '__main__':
     run_tests()

@@ -19,7 +19,7 @@ _logger.debug(_p)
 import unittest
 
 # import test modules.
-from test import *
+from tests import *
 
 
 def run_tests(verbosity=2):
