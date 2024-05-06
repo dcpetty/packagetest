@@ -14,13 +14,13 @@ _logger.debug(str(_P(__file__).resolve().parents[1]))   # up to the package
 _p.insert(1, str(_P(__file__).resolve().parents[1]))
 _p = list(_OD.fromkeys(_p))
 _logger.debug(_p)
-import sys; sys.path.append('/Users/dcp/work/Python/packagetest/src')
-__version__ = '0.0.2'
-
-__all__ = ['a', 'b', 'c', 'd', 'ta', 'tb', 'tc', 'td', '__version__']
 
 from mod import *
 from mod.pkg import *
 _logger.info(f"   dir()={repr(dir())})")
 from . import *
 _logger.info(f"   dir()={repr(dir())})")
+
+__version__ = '0.0.2'
+
+__all__ = ['a', 'b', 'c', 'd', 'ta', 'tb', 'tc', 'td', '__version__']

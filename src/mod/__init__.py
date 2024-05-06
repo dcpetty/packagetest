@@ -18,6 +18,7 @@ _logger.debug(_p)
 __version__ = '0.0.4'
 
 from . import a, b, c, pkg
+
 __all__ = ['a', 'b', 'c', 'pkg', '__version__']
 
 _logger.info(f"   dir()={repr(dir())})")

@@ -1,4 +1,4 @@
-# mod.pkg.__main__.py
+# mod.__main__.py
 
 import logging as _logging
 FORMAT = '%(levelname)s:%(name)10s:%(message)s'
@@ -28,5 +28,6 @@ from mod import a, b, c
 from mod.pkg import d
 _logger.info(f"   dir()={repr(dir())})")
 
+_logger.info(f" \u2192 d.func()")
 d.func()
 _logger.info(f"   EXECUTABLE (__version__={repr(__version__)})")
