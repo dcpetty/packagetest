@@ -10,7 +10,7 @@ _logger.info(f" \u2191 __main__.py (__package__={repr(__package__)})")
 from sys import path as _p
 from pathlib import Path as _P
 from collections import OrderedDict as _OD
-
+# path hack: add package directory to path.
 _logger.debug(str(_P(__file__).resolve().parents[1]))  # up to the package
 _p.insert(1, str(_P(__file__).resolve().parents[1]))
 _p = list(_OD.fromkeys(_p))
@@ -39,4 +39,5 @@ def run_tests(verbosity=2):
     runner = unittest.TextTestRunner(verbosity=verbosity)
     result = runner.run(suite)
 
-run_tests()
+if __name__ == '__main__':
+    run_tests()
