@@ -10,6 +10,7 @@ _logger.info(f" \u2191 __init__.py (__package__={repr(__package__)})")
 from sys import path as _p
 from pathlib import Path as _P
 from collections import OrderedDict as _OD
+# path hack: add package directory to path.
 _logger.debug(str(_P(__file__).resolve().parents[0]))   # up to the package
 _p.insert(1, str(_P(__file__).resolve().parents[0]))
 _p = list(_OD.fromkeys(_p))
