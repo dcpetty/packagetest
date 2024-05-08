@@ -10,23 +10,23 @@ tests=(
 )
 
 for c in "${tests[@]}"; do
-  echo "# $c"
+  python3 -c "print(f' $c '.center(72, '#'))"
   sh -c "$c"
   echo ""
 done
 
 tests=(
-  'python3 foo.py "foo bar"'
+  'python3 main.py "foo bar"'
   'python3 mod "foo bar"'
   'python3 -m mod "foo bar"'
-  'python3 main.py "foo bar"'
+  'python3 run.py "foo bar"'
   'python3 tests "foo bar"'
   'python3 -m tests "foo bar"'
 )
 
 cd ./src
 for c in "${tests[@]}"; do
-  echo "# $c"
+  python3 -c "print(f' $c '.center(72, '#'))"
   sh -c "$c"
   echo ""
 done
