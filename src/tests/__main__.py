@@ -20,6 +20,7 @@ import unittest
 
 # import test modules.
 from tests import *
+_logger.info(f"   after from tests import *({dir()})")
 
 
 def run_tests(verbosity=2):
@@ -40,4 +41,5 @@ def run_tests(verbosity=2):
     result = runner.run(suite)
 
 if __name__ == '__main__':
+    _logger.info(f"prior to run_tests()")
     run_tests()

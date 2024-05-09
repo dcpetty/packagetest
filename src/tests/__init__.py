@@ -17,10 +17,11 @@ _p = list(_OD.fromkeys(_p))
 _logger.debug(_p)
 
 from mod import *
+_logger.info(f"   after 'from mod import *' dir()={repr(dir())})")
 from mod.pkg import *
-_logger.info(f"   dir()={repr(dir())})")
+_logger.info(f"   after 'from mod.pkg import *' dir()={repr(dir())})")
 from . import *
-_logger.info(f"   dir()={repr(dir())})")
+_logger.info(f"   after 'from . import *' dir()={repr(dir())})")
 
 __version__ = '0.0.2'
 
