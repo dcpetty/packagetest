@@ -33,3 +33,25 @@ if __name__ == '__main__':
     _logger.info(f" \u2192 d.func()")
     d.func()
     _logger.info(f"   EXECUTABLE (__version__={repr(__version__)})")
+
+# Typical __main__.py:
+'''
+#!/usr/bin/env python3
+
+# From https://stackoverflow.com/a/65780624/17467335 to fix relative imports.
+from sys import path as _p
+from pathlib import Path as _P
+from collections import OrderedDict as _OD
+# path hack: add package directory to path.
+_p.insert(1, str(_P(__file__).resolve().parents[1]))
+_p = list(_OD.fromkeys(_p))
+
+from package import *
+
+def main():
+    """Create a main() function using symbols imported from package."""
+    pass
+
+if __name__ == '__main__':
+    main()
+'''
