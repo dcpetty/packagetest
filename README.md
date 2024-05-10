@@ -26,6 +26,10 @@ It has been confusing to make all this work, given the module loading order of `
 | [importmonkey](https://github.com/hirsimaki-markus/importmonkey) | Look into using `importmonkey` &mdash; I did *not* use it, but it seems simple |
 | [`ultraimport`](https://github.com/ronny-rentner/ultraimport) | Another external library solution (I did *not* use) |
 
+## `packagetest` example
+
+In order to meet the requirements outlined above, this example shows `import`ing modules from a package, submodules from a package, modules from other modules, and packages from other packages.
+
 The `packagetest` example repository structure and directory / module layout is as follows:
 
 ```text
@@ -58,14 +62,65 @@ The `packagetest` example repository structure and directory / module layout is 
 
 (This [ASCII](https://en.wikipedia.org/wiki/ASCII) folder structure diagram was generated with [tree.nathanfriend.io](https://arc.net/l/quote/itprgxfi), '&hellip;an online tree-like utility for generating ASCII folder structure diagrams.')
 
+## Lessons learned from this example&hellip;
+
+- All packages should include:
+  - `__init__.py` &mdash; for other `import`s and setting dunder variable (including `__all__`).
+  - `__main__.py` &mdash; for running the package as a package or a module.
+- In all `__init__.py` use `from . import names` &mdash; or use `from . import *`, but this idiom does not add symbols for `*` modules in `.`.
+- In all `__init__.py` *after `import`s* set `__all__` and other dunder variables. Example:
+
+```python
+__version__ = "0.0.4"
+
+__all__ = ["name1", "name2", "__version__", ]
+__author__ = "David C. Petty"
+__copyright__ = "Copyright 2024, David C. Petty"
+__credits__ = ["David C. Petty", ]
+__license__ = "https://creativecommons.org/licenses/by-nc-sa/4.0/"
+__maintainer__ = "David C. Petty"
+__email__ = "github@patton-petty.net"
+__status__ = "Development"
+```
+
+- In all `__init__.py` that must import from other packages (like `tests`), include the *path hack* up to the `package` parent.
+- In all `__main__.py`:
+  - Include the *path hack* up to the `package` parent.
+  - Use `from package import names` or `from package import *` for all packages.
+  - Include code for package that would usually be wrapped in `if __name__ == '__main__':`, but also *wrapit in that selection* so that it won't be executed 
+  - Example `__main__.py` (includes example *path hack*):
+
+```python
+#!/usr/bin/env python3
+
+# From https://stackoverflow.com/a/65780624/17467335 to fix relative imports.
+from sys import path as _p
+from pathlib import Path as _P
+from collections import OrderedDict as _OD
+# path hack: add package directory to path.
+_p.insert(1, str(_P(__file__).resolve().parents[1]))
+_p = list(_OD.fromkeys(_p))
+
+from package import *
+
+def main():
+    """Create a main() function using symbols imported from package."""
+    pass
+
+if __name__ == '__main__':
+    main()
+```
+
+The lessons learned from this example are incorporated in my [`pythontemplate`](https://github.com/dcpetty/pythontemplate) repository.
+
 ## Sample output `test.sh`
 
-The `bash` script `test.sh` runs commands from the command line to test the three scenarios for the `mod` and `tests` packages in both from the directory containing the module directories and from a parent directory. Logs labeled with <code>&#x2191;</code> indicate a module's `import`; logs labeled with <code> </code> indicate a function invoked within a module; logs labeled with <code>&#x2192;</code> indicate a function being called in another module.
+The `bash` script [`test.sh`](https://github.com/dcpetty/packagetest/blob/main/test.sh) runs commands from the command line to test the three scenarios for the `mod` and `tests` package both from the directory containing the module directories and from a parent directory. Logs labeled with <code>&#x2191;</code> indicate a module's `import`; logs labeled with <code> </code> indicate a function invoked within a module; logs labeled with <code>&#x2192;</code> indicate a function being called in another module.
 
 <style>.pre strong { color: green; } .pre em { color: darkgreen; } .pre span { color: red;}</style>
 <pre class="pre">
 <strong>dcp:packagetest % </strong><em>sh test.sh</em>
-# python3 src/main.py "foo bar"
+#################### python3 src/main.py "foo bar" #####################
 INFO:  __main__: ↑ main.py (__package__=None)
 INFO:       mod: ↑ __init__.py (__package__='mod')
 INFO:     mod.a: ↑ a.py (__package__='mod')
@@ -80,7 +135,7 @@ INFO:   mod.pkg:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__
 INFO:       mod:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', 'a', 'b', 'c', 'pkg'])
 INFO: mod.pkg.d:   [a.a, b.b, c.c, d, ]=['a', 'b', 'c', 'd'])
 
-# python3 src/mod "foo bar"
+###################### python3 src/mod "foo bar" #######################
 INFO:  __main__: ↑ __main__.py (__package__='')
 INFO:       mod: ↑ __init__.py (__package__='mod')
 INFO:     mod.a: ↑ a.py (__package__='mod')
@@ -107,10 +162,11 @@ INFO: mod.pkg.d:   dir()=['FORMAT', '__builtins__', '__cached__', '__doc__', '__
 INFO:   mod.pkg:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '_logger', '_logging', 'd'])
 INFO:       mod:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', 'a', 'b', 'c', 'pkg'])
 INFO:  __main__:   dir()=['FORMAT', '_OD', '_P', '__annotations__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'm', 'pkg', 'sys'])
+INFO:  __main__: → d.func()
 INFO: mod.pkg.d:   [a.a, b.b, c.c, d, ]=['a', 'b', 'c', 'd'])
 INFO:  __main__:   EXECUTABLE (__version__='0.0.4')
 
-# python3 -m src.mod "foo bar"
+##################### python3 -m src.mod "foo bar" #####################
 INFO:   src.mod: ↑ __init__.py (__package__='src.mod')
 INFO: src.mod.a: ↑ a.py (__package__='src.mod')
 INFO: src.mod.b: ↑ b.py (__package__='src.mod')
@@ -148,10 +204,11 @@ INFO: mod.pkg.d:   dir()=['FORMAT', '__builtins__', '__cached__', '__doc__', '__
 INFO:   mod.pkg:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '_logger', '_logging', 'd'])
 INFO:       mod:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', 'a', 'b', 'c', 'pkg'])
 INFO:  __main__:   dir()=['FORMAT', '_OD', '_P', '__annotations__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'm', 'pkg', 'sys'])
+INFO:  __main__: → d.func()
 INFO: mod.pkg.d:   [a.a, b.b, c.c, d, ]=['a', 'b', 'c', 'd'])
 INFO:  __main__:   EXECUTABLE (__version__='0.0.4')
 
-# python3 src/run.py "foo bar"
+##################### python3 src/run.py "foo bar" #####################
 INFO:  __main__: ↑ run.py (__package__=None)
 INFO:     tests: ↑ __init__.py (__package__='tests')
 INFO:       mod: ↑ __init__.py (__package__='mod')
@@ -165,27 +222,15 @@ INFO: mod.pkg.d: ↑ d.py (__package__='mod.pkg')
 INFO: mod.pkg.d:   dir()=['FORMAT', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '_logger', '_logging', 'a', 'b', 'c', 'd'])
 INFO:   mod.pkg:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '_logger', '_logging', 'd'])
 INFO:       mod:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', 'a', 'b', 'c', 'pkg'])
-INFO:     tests:   dir()=['FORMAT', '_OD', '_P', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg', 'sys'])
+INFO:     tests:   after 'from mod import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'pkg'])
+INFO:     tests:   after 'from mod.pkg import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg'])
+INFO:     tests:   after 'from . import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg'])
+INFO:tests.__main__: ↑ __main__.py (__package__='tests')
 INFO:  tests.ta: ↑ ta.py (__package__='tests')
-INFO:  tests.tb: ↑ ta.py (__package__='tests')
+INFO:  tests.tb: ↑ tb.py (__package__='tests')
 INFO:  tests.tc: ↑ tc.py (__package__='tests')
 INFO:  tests.td: ↑ td.py (__package__='tests')
-INFO:     tests:   dir()=['FORMAT', '_OD', '_P', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg', 'sys', 'ta', 'tb', 'tc', 'td'])
-INFO:tests.__main__: ↑ __main__.py (__package__='tests')
-test_a (tests.ta.TestA.test_a) ... INFO:  tests.ta:   test_a()
-ok
-test_b (tests.tb.TestB.test_b) ... INFO:  tests.tb:   test_b()
-ok
-test_c (tests.tc.TestC.test_c) ... INFO:  tests.tc:   test_c()
-ok
-test_d (tests.td.TestD.test_d) ... INFO:  tests.td:   test_d()
-INFO: mod.pkg.d:   [a.a, b.b, c.c, d, ]=['a', 'b', 'c', 'd'])
-ok
-
-----------------------------------------------------------------------
-Ran 4 tests in 0.000s
-
-OK
+INFO:tests.__main__:   after from tests import *(['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'ta', 'tb', 'tc', 'td', 'unittest'])
 test_a (tests.ta.TestA.test_a) ... INFO:  tests.ta:   test_a()
 ok
 test_b (tests.tb.TestB.test_b) ... INFO:  tests.tb:   test_b()
@@ -201,7 +246,7 @@ Ran 4 tests in 0.000s
 
 OK
 
-# python3 src/tests "foo bar"
+##################### python3 src/tests "foo bar" ######################
 INFO:  __main__: ↑ __main__.py (__package__='')
 INFO:     tests: ↑ __init__.py (__package__='tests')
 INFO:       mod: ↑ __init__.py (__package__='mod')
@@ -215,12 +260,15 @@ INFO: mod.pkg.d: ↑ d.py (__package__='mod.pkg')
 INFO: mod.pkg.d:   dir()=['FORMAT', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '_logger', '_logging', 'a', 'b', 'c', 'd'])
 INFO:   mod.pkg:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '_logger', '_logging', 'd'])
 INFO:       mod:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', 'a', 'b', 'c', 'pkg'])
-INFO:     tests:   dir()=['FORMAT', '_OD', '_P', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg', 'sys'])
+INFO:     tests:   after 'from mod import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'pkg'])
+INFO:     tests:   after 'from mod.pkg import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg'])
+INFO:     tests:   after 'from . import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg'])
 INFO:  tests.ta: ↑ ta.py (__package__='tests')
-INFO:  tests.tb: ↑ ta.py (__package__='tests')
+INFO:  tests.tb: ↑ tb.py (__package__='tests')
 INFO:  tests.tc: ↑ tc.py (__package__='tests')
 INFO:  tests.td: ↑ td.py (__package__='tests')
-INFO:     tests:   dir()=['FORMAT', '_OD', '_P', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg', 'sys', 'ta', 'tb', 'tc', 'td'])
+INFO:  __main__:   after from tests import *(['FORMAT', '_OD', '_P', '__annotations__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'ta', 'tb', 'tc', 'td', 'unittest'])
+INFO:  __main__:prior to run_tests()
 test_a (tests.ta.TestA.test_a) ... INFO:  tests.ta:   test_a()
 ok
 test_b (tests.tb.TestB.test_b) ... INFO:  tests.tb:   test_b()
@@ -236,7 +284,7 @@ Ran 4 tests in 0.000s
 
 OK
 
-# python3 -m src.tests "foo bar"
+#################### python3 -m src.tests "foo bar" ####################
 INFO: src.tests: ↑ __init__.py (__package__='src.tests')
 INFO:       mod: ↑ __init__.py (__package__='mod')
 INFO:     mod.a: ↑ a.py (__package__='mod')
@@ -249,20 +297,20 @@ INFO: mod.pkg.d: ↑ d.py (__package__='mod.pkg')
 INFO: mod.pkg.d:   dir()=['FORMAT', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '_logger', '_logging', 'a', 'b', 'c', 'd'])
 INFO:   mod.pkg:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '_logger', '_logging', 'd'])
 INFO:       mod:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', 'a', 'b', 'c', 'pkg'])
-INFO: src.tests:   dir()=['FORMAT', '_OD', '_P', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg', 'sys'])
-INFO:src.tests.ta: ↑ ta.py (__package__='src.tests')
-INFO:src.tests.tb: ↑ ta.py (__package__='src.tests')
-INFO:src.tests.tc: ↑ tc.py (__package__='src.tests')
-INFO:src.tests.td: ↑ td.py (__package__='src.tests')
-INFO: src.tests:   dir()=['FORMAT', '_OD', '_P', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg', 'sys', 'ta', 'tb', 'tc', 'td'])
+INFO: src.tests:   after 'from mod import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'pkg'])
+INFO: src.tests:   after 'from mod.pkg import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg'])
+INFO: src.tests:   after 'from . import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg'])
 INFO:  __main__: ↑ __main__.py (__package__='src.tests')
 INFO:     tests: ↑ __init__.py (__package__='tests')
-INFO:     tests:   dir()=['FORMAT', '_OD', '_P', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg', 'sys'])
+INFO:     tests:   after 'from mod import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'pkg'])
+INFO:     tests:   after 'from mod.pkg import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg'])
+INFO:     tests:   after 'from . import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg'])
 INFO:  tests.ta: ↑ ta.py (__package__='tests')
-INFO:  tests.tb: ↑ ta.py (__package__='tests')
+INFO:  tests.tb: ↑ tb.py (__package__='tests')
 INFO:  tests.tc: ↑ tc.py (__package__='tests')
 INFO:  tests.td: ↑ td.py (__package__='tests')
-INFO:     tests:   dir()=['FORMAT', '_OD', '_P', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg', 'sys', 'ta', 'tb', 'tc', 'td'])
+INFO:  __main__:   after from tests import *(['FORMAT', '_OD', '_P', '__annotations__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'ta', 'tb', 'tc', 'td', 'unittest'])
+INFO:  __main__:prior to run_tests()
 test_a (tests.ta.TestA.test_a) ... INFO:  tests.ta:   test_a()
 ok
 test_b (tests.tb.TestB.test_b) ... INFO:  tests.tb:   test_b()
@@ -278,10 +326,22 @@ Ran 4 tests in 0.000s
 
 OK
 
-# python3 foo.py "foo bar"
-/Users/dcp/.pyenv/versions/3.12.1/bin/python3: can't open file '/Users/dcp/work/Python/packagetest/src/foo.py': [Errno 2] No such file or directory
+###################### python3 main.py "foo bar" #######################
+INFO:  __main__: ↑ main.py (__package__=None)
+INFO:       mod: ↑ __init__.py (__package__='mod')
+INFO:     mod.a: ↑ a.py (__package__='mod')
+INFO:     mod.b: ↑ b.py (__package__='mod')
+INFO:     mod.c: ↑ c.py (__package__='mod')
+INFO:     mod.b:   b.py (c='c')
+INFO:     mod.a:   a.py (b='b')
+INFO:   mod.pkg: ↑ __init__.py (__package__='mod.pkg')
+INFO: mod.pkg.d: ↑ d.py (__package__='mod.pkg')
+INFO: mod.pkg.d:   dir()=['FORMAT', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '_logger', '_logging', 'a', 'b', 'c', 'd'])
+INFO:   mod.pkg:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '_logger', '_logging', 'd'])
+INFO:       mod:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', 'a', 'b', 'c', 'pkg'])
+INFO: mod.pkg.d:   [a.a, b.b, c.c, d, ]=['a', 'b', 'c', 'd'])
 
-# python3 mod "foo bar"
+######################## python3 mod "foo bar" #########################
 INFO:  __main__: ↑ __main__.py (__package__='')
 INFO:       mod: ↑ __init__.py (__package__='mod')
 INFO:     mod.a: ↑ a.py (__package__='mod')
@@ -308,10 +368,11 @@ INFO: mod.pkg.d:   dir()=['FORMAT', '__builtins__', '__cached__', '__doc__', '__
 INFO:   mod.pkg:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '_logger', '_logging', 'd'])
 INFO:       mod:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', 'a', 'b', 'c', 'pkg'])
 INFO:  __main__:   dir()=['FORMAT', '_OD', '_P', '__annotations__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'm', 'pkg', 'sys'])
+INFO:  __main__: → d.func()
 INFO: mod.pkg.d:   [a.a, b.b, c.c, d, ]=['a', 'b', 'c', 'd'])
 INFO:  __main__:   EXECUTABLE (__version__='0.0.4')
 
-# python3 -m mod "foo bar"
+####################### python3 -m mod "foo bar" #######################
 INFO:       mod: ↑ __init__.py (__package__='mod')
 INFO:     mod.a: ↑ a.py (__package__='mod')
 INFO:     mod.b: ↑ b.py (__package__='mod')
@@ -338,26 +399,12 @@ INFO: mod.pkg.d:   dir()=['FORMAT', '__builtins__', '__cached__', '__doc__', '__
 INFO:   mod.pkg:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '_logger', '_logging', 'd'])
 INFO:       mod:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', 'a', 'b', 'c', 'pkg'])
 INFO:  __main__:   dir()=['FORMAT', '_OD', '_P', '__annotations__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'm', 'pkg', 'sys'])
+INFO:  __main__: → d.func()
 INFO: mod.pkg.d:   [a.a, b.b, c.c, d, ]=['a', 'b', 'c', 'd'])
 INFO:  __main__:   EXECUTABLE (__version__='0.0.4')
 
-# python3 main.py "foo bar"
-INFO:  __main__: ↑ main.py (__package__=None)
-INFO:       mod: ↑ __init__.py (__package__='mod')
-INFO:     mod.a: ↑ a.py (__package__='mod')
-INFO:     mod.b: ↑ b.py (__package__='mod')
-INFO:     mod.c: ↑ c.py (__package__='mod')
-INFO:     mod.b:   b.py (c='c')
-INFO:     mod.a:   a.py (b='b')
-INFO:   mod.pkg: ↑ __init__.py (__package__='mod.pkg')
-INFO: mod.pkg.d: ↑ d.py (__package__='mod.pkg')
-INFO: mod.pkg.d:   dir()=['FORMAT', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '_logger', '_logging', 'a', 'b', 'c', 'd'])
-INFO:   mod.pkg:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '_logger', '_logging', 'd'])
-INFO:       mod:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', 'a', 'b', 'c', 'pkg'])
-INFO: mod.pkg.d:   [a.a, b.b, c.c, d, ]=['a', 'b', 'c', 'd'])
-
-# python3 tests "foo bar"
-INFO:  __main__: ↑ __main__.py (__package__='')
+####################### python3 run.py "foo bar" #######################
+INFO:  __main__: ↑ run.py (__package__=None)
 INFO:     tests: ↑ __init__.py (__package__='tests')
 INFO:       mod: ↑ __init__.py (__package__='mod')
 INFO:     mod.a: ↑ a.py (__package__='mod')
@@ -370,12 +417,15 @@ INFO: mod.pkg.d: ↑ d.py (__package__='mod.pkg')
 INFO: mod.pkg.d:   dir()=['FORMAT', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '_logger', '_logging', 'a', 'b', 'c', 'd'])
 INFO:   mod.pkg:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '_logger', '_logging', 'd'])
 INFO:       mod:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', 'a', 'b', 'c', 'pkg'])
-INFO:     tests:   dir()=['FORMAT', '_OD', '_P', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg', 'sys'])
+INFO:     tests:   after 'from mod import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'pkg'])
+INFO:     tests:   after 'from mod.pkg import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg'])
+INFO:     tests:   after 'from . import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg'])
+INFO:tests.__main__: ↑ __main__.py (__package__='tests')
 INFO:  tests.ta: ↑ ta.py (__package__='tests')
-INFO:  tests.tb: ↑ ta.py (__package__='tests')
+INFO:  tests.tb: ↑ tb.py (__package__='tests')
 INFO:  tests.tc: ↑ tc.py (__package__='tests')
 INFO:  tests.td: ↑ td.py (__package__='tests')
-INFO:     tests:   dir()=['FORMAT', '_OD', '_P', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg', 'sys', 'ta', 'tb', 'tc', 'td'])
+INFO:tests.__main__:   after from tests import *(['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'ta', 'tb', 'tc', 'td', 'unittest'])
 test_a (tests.ta.TestA.test_a) ... INFO:  tests.ta:   test_a()
 ok
 test_b (tests.tb.TestB.test_b) ... INFO:  tests.tb:   test_b()
@@ -391,7 +441,8 @@ Ran 4 tests in 0.000s
 
 OK
 
-# python3 -m tests "foo bar"
+####################### python3 tests "foo bar" ########################
+INFO:  __main__: ↑ __main__.py (__package__='')
 INFO:     tests: ↑ __init__.py (__package__='tests')
 INFO:       mod: ↑ __init__.py (__package__='mod')
 INFO:     mod.a: ↑ a.py (__package__='mod')
@@ -404,13 +455,53 @@ INFO: mod.pkg.d: ↑ d.py (__package__='mod.pkg')
 INFO: mod.pkg.d:   dir()=['FORMAT', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '_logger', '_logging', 'a', 'b', 'c', 'd'])
 INFO:   mod.pkg:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '_logger', '_logging', 'd'])
 INFO:       mod:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', 'a', 'b', 'c', 'pkg'])
-INFO:     tests:   dir()=['FORMAT', '_OD', '_P', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg', 'sys'])
+INFO:     tests:   after 'from mod import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'pkg'])
+INFO:     tests:   after 'from mod.pkg import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg'])
+INFO:     tests:   after 'from . import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg'])
 INFO:  tests.ta: ↑ ta.py (__package__='tests')
-INFO:  tests.tb: ↑ ta.py (__package__='tests')
+INFO:  tests.tb: ↑ tb.py (__package__='tests')
 INFO:  tests.tc: ↑ tc.py (__package__='tests')
 INFO:  tests.td: ↑ td.py (__package__='tests')
-INFO:     tests:   dir()=['FORMAT', '_OD', '_P', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg', 'sys', 'ta', 'tb', 'tc', 'td'])
+INFO:  __main__:   after from tests import *(['FORMAT', '_OD', '_P', '__annotations__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'ta', 'tb', 'tc', 'td', 'unittest'])
+INFO:  __main__:prior to run_tests()
+test_a (tests.ta.TestA.test_a) ... INFO:  tests.ta:   test_a()
+ok
+test_b (tests.tb.TestB.test_b) ... INFO:  tests.tb:   test_b()
+ok
+test_c (tests.tc.TestC.test_c) ... INFO:  tests.tc:   test_c()
+ok
+test_d (tests.td.TestD.test_d) ... INFO:  tests.td:   test_d()
+INFO: mod.pkg.d:   [a.a, b.b, c.c, d, ]=['a', 'b', 'c', 'd'])
+ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.000s
+
+OK
+
+###################### python3 -m tests "foo bar" ######################
+INFO:     tests: ↑ __init__.py (__package__='tests')
+INFO:       mod: ↑ __init__.py (__package__='mod')
+INFO:     mod.a: ↑ a.py (__package__='mod')
+INFO:     mod.b: ↑ b.py (__package__='mod')
+INFO:     mod.c: ↑ c.py (__package__='mod')
+INFO:     mod.b:   b.py (c='c')
+INFO:     mod.a:   a.py (b='b')
+INFO:   mod.pkg: ↑ __init__.py (__package__='mod.pkg')
+INFO: mod.pkg.d: ↑ d.py (__package__='mod.pkg')
+INFO: mod.pkg.d:   dir()=['FORMAT', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '_logger', '_logging', 'a', 'b', 'c', 'd'])
+INFO:   mod.pkg:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '_logger', '_logging', 'd'])
+INFO:       mod:   dir()=['FORMAT', '__all__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', 'a', 'b', 'c', 'pkg'])
+INFO:     tests:   after 'from mod import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'pkg'])
+INFO:     tests:   after 'from mod.pkg import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg'])
+INFO:     tests:   after 'from . import *' dir()=['FORMAT', '_OD', '_P', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__path__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'pkg'])
 INFO:  __main__: ↑ __main__.py (__package__='tests')
+INFO:  tests.ta: ↑ ta.py (__package__='tests')
+INFO:  tests.tb: ↑ tb.py (__package__='tests')
+INFO:  tests.tc: ↑ tc.py (__package__='tests')
+INFO:  tests.td: ↑ td.py (__package__='tests')
+INFO:  __main__:   after from tests import *(['FORMAT', '_OD', '_P', '__annotations__', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', '__version__', '_logger', '_logging', '_p', 'a', 'b', 'c', 'd', 'ta', 'tb', 'tc', 'td', 'unittest'])
+INFO:  __main__:prior to run_tests()
 test_a (tests.ta.TestA.test_a) ... INFO:  tests.ta:   test_a()
 ok
 test_b (tests.tb.TestB.test_b) ... INFO:  tests.tb:   test_b()
